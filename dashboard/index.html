@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VibeFlow | μT-Kernel 3.0 Monitor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="wrap">
+<header><div><div class="kicker">Embedded vibration intelligence</div><h1>VibeFlow</h1><p class="subtitle">STM32H533RE · μT-Kernel 3.0 · USB serial</p></div><div class="connection"><i class="dot" id="status-dot"></i><span id="status-text">Disconnected</span></div></header>
+<section class="panel"><div class="panel-head"><h2>USB serial connection</h2></div><div class="panel-body"><div class="fields"><div class="field"><label for="baud">Baud rate</label><select id="baud"><option>9600</option><option>19200</option><option>38400</option><option>57600</option><option selected>115200</option><option>230400</option><option>460800</option><option>921600</option></select></div><div class="actions"><button class="btn primary" id="connect">Choose port</button><button class="btn danger" id="disconnect" disabled>Disconnect</button></div></div><p class="hint">Use Chrome or Edge with the board's USB-UART or VCP connection.</p><p class="error" id="serial-error"></p></div></section>
+<section class="panel"><div class="panel-head"><h2>Recording</h2><div class="record-status"><span class="dot" id="record-dot"></span><strong id="record-status">Ready after calibration</strong></div></div><div class="panel-body record-controls"><div class="fields"><div class="field"><label for="record-class">Dataset class</label><select id="record-class"><option value="0">Stationary</option><option value="1">Low vibration</option><option value="2">High vibration</option><option value="inference">Inference label</option></select></div><div class="actions"><button class="btn primary" id="record" disabled>Start recording</button><button class="btn danger" id="stop" disabled>Stop session</button><button class="btn" id="inference" disabled>Start inference</button></div></div><p class="hint">Choose a fixed class for labeled data, or Inference label to record the AI prediction for each feature frame.</p></div></section>
+<section class="hero"><div class="hero-icon" id="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18"/><path d="M3 12h18" opacity=".35"/><path d="M3 7h18" opacity=".15"/></svg></div><div><div class="eyebrow">Current classification</div><div class="hero-label" id="hero-label">Waiting for data</div><div class="hero-meta"><span>Confidence: <b id="hero-conf">—</b></span><span>Last update: <b id="hero-time">—</b></span><span>Source: <b id="hero-source">—</b></span></div><div class="bar"><i id="confidence-bar"></i></div></div></section>
+<section class="stats"><div class="stat"><strong id="count-stationary">0</strong><span>Stationary</span></div><div class="stat"><strong id="count-low">0</strong><span>Low vibration</span></div><div class="stat"><strong id="count-high">0</strong><span>High vibration</span></div></section>
+<section class="panel"><div class="panel-head"><h2>Detection history</h2><button class="btn small" id="clear-detections">Clear</button></div><div class="table-wrap"><table class="log"><thead><tr><th>Time</th><th>Class</th><th>Confidence</th></tr></thead><tbody id="detection-rows"></tbody></table><div class="empty" id="empty-detections">No inference results yet.</div></div></section>
+
+<section class="panel"><div class="panel-head"><h2>Saved recording sessions</h2><button class="btn small danger" id="clear-records">Delete all records</button></div><div class="record-list" id="record-list"><div class="empty" id="empty-records">No completed recording sessions.</div></div></section>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>
