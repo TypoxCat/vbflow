@@ -23,7 +23,7 @@ Version: firmware 0.1.0 · model 0.1.0 · dashboard 0.1.0
 
 ## 1. What is VibeFlow?
 
-VibeFlow measures vibration with an MPU6050 accelerometer (GY-521 module), processes it on an STM32H533RE, and classifies it into three states:
+VibeFlow measures vibration with an MPU6050 accelerometer (GY-86 module), processes it on an STM32H533RE, and classifies it into three states:
 
 | Label | Class | Meaning |
 |-------|-------|---------|
@@ -46,7 +46,7 @@ MPU6050 (GY) --I2C--> STM32H533RE --USB serial (115200)--> Laptop --> Web dashbo
 
 **Hardware**
 - STM32H533RE Nucleo board with VibeFlow firmware flashed
-- MPU6050 (GY-521) module, wired to the board
+- MPU6050 (GY-86) module, wired to the board
 - USB cable (data cable, not charge-only)
 
 **Software**
