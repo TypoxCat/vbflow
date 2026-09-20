@@ -1,7 +1,7 @@
 # VibeFlow User Manual
 
 **Vibration monitoring and classification on STM32H533RE + µT-Kernel 3.0**
-Version: firmware 0.1.0 · model 0.1.0 · dashboard 0.1.0
+Version: firmware _(fill in)_ · model _(fill in)_ · dashboard _(fill in)_
 
 ---
 
@@ -16,8 +16,9 @@ Version: firmware 0.1.0 · model 0.1.0 · dashboard 0.1.0
 7. [Using a Serial Terminal Instead of the Dashboard](#7-using-a-serial-terminal-instead-of-the-dashboard)
 8. [Serial Output Format](#8-serial-output-format)
 9. [Troubleshooting](#9-troubleshooting)
-10. [Limitations](#10-limitations)
-11. [Quick Reference](#11-quick-reference)
+10. [Model and Training Data](#10-model-and-training-data)
+11. [Limitations](#11-limitations)
+12. [Quick Reference](#12-quick-reference)
 
 ---
 
@@ -30,6 +31,8 @@ VibeFlow measures vibration with an MPU6050 accelerometer (GY-86 module), proces
 | 0 | `stationary` | No vibration |
 | 1 | `low_vibration` | Light vibration |
 | 2 | `high_vibration` | Strong vibration |
+
+It is a complete **edge AI** device: the signal processing (FFT and feature extraction) and the neural network run entirely on the microcontroller. No cloud, no laptop-side model, and no network connection are needed to detect and classify vibration. The laptop is only used to display results and save recordings.
 
 It has two modes:
 
@@ -92,6 +95,8 @@ Notes:
 > **Important:** connect to the port _before_ pressing RESET. Calibration messages are only sent at boot. If you connect after calibration has already finished, the dashboard stays in "waiting for calibration" and its buttons remain disabled. Press RESET again to fix it.
 
 > **Tip:** if the hardware was recently moved or re-wired, always re-run calibration on a flat, still surface.
+
+> **Tip:** calibrate on the surface where the device will actually be used. Low/high vibration classes depend on that surface (see Section 10).
 
 ---
 
@@ -201,6 +206,7 @@ df = pd.read_csv("vibeflow-session-1.csv", comment="#")
 | Serial output looks correct but is irregular, scrambled, or values look wrong | Stale or corrupted build, or bad flash | **Clean the project, rebuild, and re-flash.** This fixed the issue in past cases |
 | Garbled characters | Wrong baud rate | Set 115200 on both the dashboard/terminal and (if changed) the firmware |
 | Classification looks wrong or never settles on "stationary" | Calibration was done on a moving or tilted surface | Put the board on a flat, still surface and press RESET to re-calibrate |
+| Same vibration gives a different class than before | The device is on a different surface, or was calibrated somewhere else | Move it back, or re-calibrate on the current surface. Heavier surfaces need stronger vibration, lighter ones weaker (see Section 10) |
 | Results are unstable between classes | Sensor is loose, or vibration is on the boundary between two classes | Fix the sensor rigidly; average over several results |
 | Dashboard buttons stay disabled after a session | Session state lost | Click Stop session, or press RESET |
 | Recorded sessions disappeared | Page was refreshed or closed | Sessions are kept in the browser only. Download each CSV right after recording |
@@ -215,17 +221,97 @@ df = pd.read_csv("vibeflow-session-1.csv", comment="#")
 
 ---
 
-## 10. Limitations
+## 10. Model and Training Data
+
+### What runs on the device
+
+The device runs a small neural network (an **MLP**, a fully connected network) on the microcontroller. It takes **6 features** computed from each 256-sample frame:
+
+`peak_hz`, `peak_mg`, `rms_mg`, `band_0_5_mg`, `band_5_15_mg`, `band_15_30_mg`
+
+and outputs one of three classes with a confidence value. The model is trained on a laptop, converted to an INT8-quantized TFLite model, and deployed to the board through CubeMX. Because the input is a handful of features instead of raw signal, inference is light enough for a small microcontroller.
+
+### The two datasets
+
+Two datasets were collected with this device and used for training experiments:
+
+| | Dataset 1 (`data_1`) | Dataset 2 (`data_2`) |
+|---|---|---|
+| Purpose | Controlled vibration levels | Real vehicle detection |
+| How it was made | Vibration applied **by hand** to the device, with a consistent, deliberate level for each class | Real vehicle data |
+| Classes | `diam` (stationary), `low`, `high` | `no_vehicle`, `two_wheel`, `four_wheel`, `unknown` |
+| Size | 900 frames, 30 sessions (10 per class, 30 frames each) | 2,969 frames, but only 6 sessions (mostly `no_vehicle` and `two_wheel`) |
+| Status | Clean and balanced. **This is the dataset used for the deployed model.** | Not yet good enough for training. More data is needed. |
+
+Notes on dataset 1:
+- In the low-vibration data, the device really is vibrating slightly throughout the session. In the high-vibration data, it is vibrating strongly throughout. Each session holds one class only.
+- Class names in the datasets map to the firmware and dashboard as: `diam` = Stationary, `low` = Low vibration, `high` = High vibration.
+- A Random Forest baseline on the same features, evaluated with a session-level split (18 training, 6 validation, 6 test sessions), reached about 99 % accuracy on the test sessions. This shows the six features separate the three classes well. The MLP is the model actually deployed.
+
+Notes on dataset 2:
+- Vehicle classes are very imbalanced (for example, only 134 frames of `four_wheel` versus 1,777 of `no_vehicle`), and there are too few sessions to keep some sessions aside for testing.
+- The `unknown` class is not yet well defined.
+- Because of this, the vehicle model was **not** deployed. Dataset 2 needs more recordings before it can be trained reliably.
+
+### Training files
+
+The `Training/` folder contains the notebooks, to be run in order:
+
+| File | What it does |
+|------|--------------|
+| `Phase_1_EDA.ipynb` | Exploratory analysis and cleaning of the recorded CSV files; produces the combined clean dataset |
+| `phase_2_random_forest_baseline.ipynb` | Random Forest baseline, session-level train/validation/test split |
+| `phase_3_tinyml_mlp.ipynb` | Trains small MLPs (e.g. 6 → 16 → 8 → 3), compares architectures, quantizes to INT8, exports the scaler values used on the device |
+
+`data_1/vibration_clean_dataset.csv` and `data_2/vehicle_dataset.csv` are the combined datasets. Point the `DATASET_PATH` setting in the notebooks at the one you want to train on. In the current copy of Phase 3, it is set to the vehicle dataset. For the deployed vibration model, use dataset 1 with the classes `diam`, `low`, `high`.
+
+Important: **split by session, never by frame.** Frames from the same session are very similar, so mixing them between training and test sets gives falsely high accuracy.
+
+### Effect of the mounting surface
+
+`low_vibration` and `high_vibration` are **not absolute vibration strengths**. They describe how strongly the sensor itself vibrates, and that depends on the surface the device sits on. The device is calibrated at startup on that surface, so its readings are relative to where it was placed.
+
+| Surface | What happens |
+|---------|--------------|
+| **Heavy or rigid** (concrete floor, heavy table, machine frame) | The surface absorbs much of the energy, so a **stronger** vibration is needed before the sensor reaches `low_vibration` or `high_vibration` |
+| **Light or flexible** (thin plate, light table, small box) | The surface moves easily, so a **weaker** vibration is enough to reach the same class |
+
+The same source can therefore produce different classes on different surfaces. This is normal behavior, not a fault.
+
+Practical guidance:
+- Always **calibrate on the same surface where the device will be used** (Section 4).
+- If you move the device to a different surface, place it flat and still and press RESET to re-calibrate.
+- The training data was recorded on one particular setup. Results are most reliable on a similar surface. For a very different surface, record new data there (Section 5) and re-train, or expect the class boundaries to shift.
+- Keep the mounting the same between recording and inference: same surface, same position, same fixing method.
+
+### Collecting more data to improve the model
+
+The device itself is the data collection tool:
+
+1. Use **Recording** mode (Section 5) and pick the class for each session.
+2. Record **many separate sessions per class**, in different conditions (different days, positions, intensities). Ten sessions per class is a minimum; more is better.
+3. Keep the sensor mounting identical between recording and real use.
+4. Keep classes balanced (similar number of frames per class).
+5. Check that `read_err`, `push_err`, `ring_ovf`, and `wake_ovf` are `0`.
+6. Retrain using the Phase 1 to 3 notebooks, then import the new model through CubeMX and rebuild the firmware.
+
+If the scaler values (mean and scale) change after retraining, update them in the firmware too. A mismatch between the training scaler and the device scaler makes predictions wrong even when the model itself is good.
+
+---
+
+## 11. Limitations
 
 - Sampling is 100 Hz, so only vibration up to about **50 Hz** is analyzed.
 - Only the **Z axis** is used.
+- The deployed model was trained on hand-induced vibration (dataset 1). It classifies **vibration level**, not vibration source. It does not yet identify vehicle types; that needs more data (see Section 10).
 - The model recognizes only the three trained classes. Unseen machines, mounting positions, or vibration types may be classified incorrectly. Re-record data and re-train for new setups.
 - Calibration assumes the board is flat and still at boot.
+- Class results depend on the mounting surface. The same vibration source can give `low_vibration` on a light surface and `high_vibration` on another, and heavier surfaces need stronger vibration to reach the same class (see Section 10).
 - Use it in normal temperature conditions; the MPU6050 is not rated for harsh environments.
 
 ---
 
-## 11. Quick Reference
+## 12. Quick Reference
 
 ```
 1. Plug in USB
