@@ -22,6 +22,10 @@ Version: firmware _(fill in)_ · model _(fill in)_ · dashboard _(fill in)_
 
 ---
 
+## Demo
+[![VibeFlow demo video](https://img.youtube.com/vi/G3af8MEP-F0/maxresdefault.jpg)](https://youtu.be/G3af8MEP-F0)
+
+
 ## 1. What is VibeFlow?
 
 VibeFlow measures vibration with an MPU6050 accelerometer (GY-86 module), processes it on an STM32H533RE, and classifies it into three states:
