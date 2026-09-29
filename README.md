@@ -15,8 +15,7 @@ GY-86 --I2C--> STM32H533RE --USB serial (115200)--> Laptop --> Web dashboard (Ch
 ```
 
 ## Demo
-
-[![VibeFlow demo video](https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+[![VibeFlow demo video](https://img.youtube.com/vi/G3af8MEP-F0/maxresdefault.jpg)](https://youtu.be/G3af8MEP-F0)
 
 ## Features
 
