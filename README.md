@@ -43,6 +43,20 @@ GY-86 --I2C--> STM32H533RE --USB serial (115200)--> Laptop --> Web dashboard (Ch
 **Hardware:** STM32H533RE Nucleo with the firmware flashed, MPU6050 (GY-86), USB data cable.
 **Software:** Chrome or Edge, Python 3 (or any local HTTP server), STM32CubeIDE to build the firmware.
 
+Clone the repository with its CMSIS-DSP dependency:
+
+```bash
+git clone --recurse-submodules https://github.com/TypoxCat/vbflow.git
+```
+
+If the repository was cloned without `--recurse-submodules`, initialize the dependency before building:
+
+```bash
+git submodule update --init --recursive
+```
+
+After initializing submodules, refresh the project in STM32CubeIDE so its generated build files include the CMSIS-DSP headers.
+
 **Wiring**
 
 | MPU6050 | STM32H533RE |
