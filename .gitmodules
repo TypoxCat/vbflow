@@ -1,3 +1,3 @@
-[submodule "mtk3_bsp2"]
-	path = mtk3_bsp2
-	url = https://github.com/tron-forum/mtk3_bsp2.git
+[submodule "cmsis-dsp"]
+	path = Drivers/CMSIS/DSP
+	url = https://github.com/ARM-software/CMSIS-DSP.git

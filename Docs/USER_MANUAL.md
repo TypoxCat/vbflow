@@ -19,6 +19,7 @@ Version: firmware _(fill in)_ · model _(fill in)_ · dashboard _(fill in)_
 10. [Model and Training Data](#10-model-and-training-data)
 11. [Limitations](#11-limitations)
 12. [Quick Reference](#12-quick-reference)
+13. [BSP Source and Local Compatibility Changes](#13-bsp-source-and-local-compatibility-changes)
 
 ---
 
@@ -326,3 +327,26 @@ If the scaler values (mean and scale) change after retraining, update them in th
 6. Press RESET, wait for calibration
 7. Start recording or inference
 ```
+
+---
+
+## 13. BSP Source and Local Compatibility Changes
+
+The `mtk3_bsp2/` directory is stored directly in this repository, rather than
+being fetched as a Git submodule. It contains the μT-Kernel 3.0 BSP2 source
+from [TRON Forum's mtk3_bsp2 repository](https://github.com/tron-forum/mtk3_bsp2),
+including its `mtkernel/` source.
+
+Two local compatibility changes are applied to that source:
+
+- `sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c`: correct the interrupt
+  handler table size from the undefined `sN_INTVEC` to `N_INTVEC`, as defined
+  for the STM32H533 target.
+- `mtkernel/kernel/knlinc/limits.h`: add guarded definitions for `LLONG_MIN`,
+  `LLONG_MAX`, and `ULLONG_MAX`. This header is on the project include path
+  and shadows the toolchain's standard `limits.h`; CMSIS-DSP requires the
+  long-long limits while compiling its sources.
+
+These changes allow the BSP and CMSIS-DSP sources to build together for the
+STM32H533RE target. Preserve the upstream license and copyright notices when
+modifying or redistributing the BSP source.
