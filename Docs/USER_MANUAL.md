@@ -82,6 +82,21 @@ Notes:
 
 ## 4. Quick Start
 
+### Build the firmware from a fresh clone
+
+CMSIS-DSP is a Git submodule, so a plain clone does not download its files.
+Clone the project and initialize the submodule before importing the project
+into STM32CubeIDE:
+
+```bash
+git clone https://github.com/TypoxCat/vbflow.git
+cd vbflow
+git submodule update --init --recursive
+```
+
+This project uses the CMSIS-DSP submodule for FFT and other signal-processing
+functions in the firmware.
+
 1. **Connect** the board to the laptop with the USB cable.
 2. **Start an HTTP server** in the project folder (any port works; 5500 is used here):
    ```bash
@@ -350,3 +365,6 @@ Two local compatibility changes are applied to that source:
 These changes allow the BSP and CMSIS-DSP sources to build together for the
 STM32H533RE target. Preserve the upstream license and copyright notices when
 modifying or redistributing the BSP source.
+
+CMSIS-DSP is pinned to upstream commit `ec1bb752` (v1.17.1-16) and is
+distributed under the Apache 2.0 license.
